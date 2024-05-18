@@ -1,8 +1,11 @@
+# References
+# Sam Siewert - sharpen.c
+# ChatGPT 3.5 - Graphic User Interface
+
 import os
 
 import tkinter as tk
 from tkinter import filedialog
-# from tkinter.filedialog import asksaveasfile
 
 import numpy as np
 import cv2
@@ -25,7 +28,7 @@ class Staxolotl:
         self.image_paths = []
         self.current_index = 0
         self.points = []
-        self.canvas = None  # Initialize canvas
+        self.canvas = None
         self.dots = []
         self.clip_list = []
         self.ap = []
@@ -64,14 +67,9 @@ class Staxolotl:
         self.ap_checkbox2 = tk.Radiobutton(parent, text = "200", variable=self.ap_radius, value=200)
         self.ap_checkbox2.grid(row=7,column=0, sticky='w', padx=10, pady=10)
 
+        # Popout Display button
         self.sharpen_button = tk.Button(parent, text="Full Image View", command=self.show_full_image)
         self.sharpen_button.grid(row=8, column=0, padx=20, pady=10)
-
-        # # Previous and Next buttons
-        # self.prev_button = tk.Button(parent, text="Previous", command=self.show_previous_image)
-        # self.prev_button.grid(row=1, column=0, padx=10, pady=10)
-        # self.next_button = tk.Button(parent, text="Next", command=self.show_next_image)
-        # self.next_button.grid(row=1, column=1, padx=10, pady=10)
 
         # Previous and Next arrows
         self.prev_arrow = tk.Label(parent, text="◄", font=("Arial", 14), cursor="hand2")
@@ -86,18 +84,18 @@ class Staxolotl:
         self.next_arrow.grid(row=12, column=11, padx=0, pady=15)
         self.next_arrow.bind("<Button-1>", lambda event: self.show_next_image())
 
-        # self.name_label = tk.Label(parent, text = str("key_image_path"), font=("TkDefaultFont", 10, "underline"))
-
         # Frame to contain FITS image viewer
         self.frame = tk.Frame(parent)
         self.frame.grid(row=1, column=1, columnspan=11, rowspan=11, padx=5, pady=5)
 
+    # Loads a fits Image
     def load_image(self, image_name):
         image_file = get_pkg_data_filename(image_name)
         image_data = fits.getdata(image_file, ext=0)
         numpy_data = np.array(image_data)
         return numpy_data
 
+    #Saves a Fits Image
     def save_image(self, numpy_data):
         file_path = filedialog.asksaveasfilename(defaultextension = ".fits")
         if file_path:
@@ -106,23 +104,25 @@ class Staxolotl:
             file_out1.writeto(file_path, overwrite=True)
         return file_path
 
+    # Opens a folder for working directory - GPT3.5
     def open_folder(self):
         folder_path = filedialog.askdirectory()
         if folder_path:
             self.image_paths = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.fits')]
-            # print(self.image_paths)
             if self.image_paths:
                 self.current_index = 0
                 self.show_image()
         self.slider.config(from_=0, to=len(self.image_paths)-1)
 
+    # Updates slider position - GPT3.5
     def slider_changed(self, value):
         index = int(float(value))
         self.current_index = index
         self.show_image()
 
+    # Displays an image to the viewer - GPT3.5
     def show_image(self):
-        plt.close('all')  # Close any previous figures
+        plt.close('all')
         plt.figure()
         hdul = fits.open(self.image_paths[self.current_index])
         image_data = hdul[0].data
@@ -130,7 +130,8 @@ class Staxolotl:
         # Downscale the image for display
         downscaled_image = cv2.resize(image_data, None, fx=self.downscale_factor, fy=self.downscale_factor)
 
-        plt.imshow(downscaled_image, cmap='gray', origin='lower')  # Display downscaled image
+        # Display downscaled image
+        plt.imshow(downscaled_image, cmap='gray', origin='lower')
 
         # Tighten the axis limits to remove white borders
         plt.gca().set_aspect('equal', adjustable='box')
@@ -158,6 +159,7 @@ class Staxolotl:
         # Change Key Image
         self.key_image_path = self.image_paths[self.current_index]
 
+    # Popout display for better viewing features - GPT3.5
     def show_full_image(self):
         if self.image_paths == []:
             self.popup_error("No images in working directory")
@@ -186,25 +188,28 @@ class Staxolotl:
             self.dots.append(dot)
             self.canvas.draw_idle()  # Redraw canvas to display the marker
 
+    # removes alignment point while only a single point is compatible but multiple are intended
     def clear_dots(self):
         # Remove previously plotted dots
         for dot in self.dots:
             dot.remove()
         self.dots = []
 
-
+    # Button for scrolling images - GPT3.5
     def show_previous_image(self):
         if self.image_paths:
             self.current_index = (self.current_index - 1) % len(self.image_paths)
             self.points.clear()  # Clear points when switching images
             self.show_image()
 
+    # Button for scrolling images - GPT3.5
     def show_next_image(self):
         if self.image_paths:
             self.current_index = (self.current_index + 1) % len(self.image_paths)
             self.points.clear()  # Clear points when switching images
             self.show_image()
 
+    # Removes images from an image set that out outside the standard deviation
     def sigma_clip(self):
 
         if self.image_paths == []:
@@ -242,6 +247,7 @@ class Staxolotl:
         self.slider.config(from_=0, to=len(self.image_paths)-1)
         self.show_image()
 
+    # Takes the average pixel value across all images
     def mean_stack(self):
         if self.image_paths == []:
             self.popup_error("No images in working directory")
@@ -252,7 +258,6 @@ class Staxolotl:
         key_image = self.load_image(self.key_image_path)
         mean_image = np.array([[0.0 for x in range(len(key_image[0]))] for y in range(len(key_image))])
         num = len(self.clip_list)
-        # print("\n"+str(len(self.clip_list))+"\n"+str(num))
         for images in tqdm(self.image_paths):
             next_image = self.image_alignment(key_image, self.load_image(images))
             mean_image = mean_image + next_image/num
@@ -265,6 +270,7 @@ class Staxolotl:
         self.current_index = 0
         self.show_image()
 
+    # Aligns on image with the reference image. Used during stacking
     def image_alignment(self, key_image, align_image):
         size = int(self.ap_radius.get())
         if self.ap == []:
@@ -279,6 +285,7 @@ class Staxolotl:
 
         return aligned_image
 
+    # Sharpens the images using a sharpening filter - translated from sharpen.c
     def point_spread(self):
 
         if self.image_paths == []:
@@ -287,16 +294,12 @@ class Staxolotl:
         
 
         PSF = np.array([0, -1, 0,-1, 5, -1,0, -1, 0])
-        K = 4.0
-        F = 8.0
 
         image = self.load_image(self.key_image_path)
         output = image
 
         height = len(image)
         width = len(image[0])
-
-        midpoint = [height//2, width//2]
 
         image_type = type(output[0][0])
         bounds = np.iinfo(image_type)
@@ -331,6 +334,7 @@ class Staxolotl:
         self.current_index = 0
         self.show_image()
 
+    # Not yet implemented - GPT3.5
     def confirm_window(self, message):
         message = str(message)
         popup = tk.Toplevel(self.parent)
@@ -356,6 +360,7 @@ class Staxolotl:
         cancel_button = tk.Button(popup, text="OK", command=popup.destroy)
         cancel_button.pack()
 
+    # Error message for when features can be used given the currently selected options - GPT3.5
     def popup_error(self, error):
         error_message = str(error)
         popup = tk.Toplevel(self.parent)
@@ -378,17 +383,6 @@ class Staxolotl:
         label.pack()
         ok_button = tk.Button(popup, text="OK", command=popup.destroy)
         ok_button.pack()
-
-
-    # def popup_error(self, error):
-    #     error_message = str(error)
-    #     popup = tk.Toplevel(self.parent)
-    #     popup.title("Error")
-    #     label = tk.Label(popup, text=error_message)
-    #     label.pack()
-    #     ok_button = tk.Button(popup, text="OK", command=popup.destroy)
-    #     ok_button.pack()
-
 
 # Create the main window
 root = tk.Tk()
