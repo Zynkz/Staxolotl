@@ -2,7 +2,7 @@
 ## Release Notes
 ### Version 1.0.0
 - First release of Staxolotl
-  - Staxolotl was created to help hobbyist astrophotographers help improve the quality of their images
+  - Staxolotl was created to help hobbyist astrophotographers improve the quality of their images
   - Compatible with the FITS image format
   - Allows you to open all images within a folder
   - Image set can be reduced to a smaller size by using sigma clipping
@@ -10,7 +10,7 @@
     - Take images within one standard deviation from the mean sharpness
   - Reference image is defined as the current image in the display
     - An alignment point can be place on the images
-    - A radius can be selected which will which will be the reference frame for alignment
+    - A radius can be selected which will be  the reference frame for alignment
     - Alignment is done with a Fourier transform and cross phase correlation
   - Images can be stacked using mean stacking
     - Takes the average pixel intensity
